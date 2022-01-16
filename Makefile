@@ -17,7 +17,7 @@ clean: FORCE
 	rm -rf ./bin
 
 test:
-	./hack/test integration gateway dockerfile
+	./hack/test integration gateway
 
 lint:
 	./hack/lint

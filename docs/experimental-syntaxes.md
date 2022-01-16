@@ -1,4 +1,4 @@
 # Dockerfile frontend syntaxes
 
 Documentation for Dockerfile syntaxes can be found in the
-[Dockerfile frontend documentation](/frontend/dockerfile/docs/syntax.md)
+[`docker/dockerfile`](https://github.com/docker/dockerfile) repository.

@@ -5,7 +5,6 @@
 
 ## CLI examples
 - [`./buildctl-daemonless`](./buildctl-daemonless): buildctl without daemon
-- [`./build-using-dockerfile`](./build-using-dockerfile): an example BuildKit client with `docker build`-style CLI
 
 ## LLB examples
 
@@ -34,6 +33,5 @@ Different versions of the example scripts show different ways of describing the 
 -  `./buildkit1` - cloning git repositories has been separated for extra concurrency.
 -  `./buildkit2` - uses git sources directly instead of running `git clone`, allowing better performance and much safer caching.
 -  `./buildkit3` - allows using local source files for separate components eg. `./buildkit3 --runc=local | buildctl build --local runc-src=some/local/path`
--  `./dockerfile2llb` - can be used to convert a Dockerfile to LLB for debugging purposes
 -  `./nested-llb` - shows how to use nested invocation to generate LLB
 -  `./gobuild` - shows how to use nested invocation to generate LLB for Go package internal dependencies

@@ -89,28 +89,33 @@ if [ "$TEST_DOCKERFILE" == 1 ]; then
     export BUILDKIT_WORKER_RANDOM=1
   fi
 
+  dfileiid="buildkit-dfile-tests"
+  buildxCmd build --target dev --output "type=docker,name=$dfileiid" "$DFILE_REF"
+
+  dfilesrc=$(mktemp -d -t dfilesrc.XXXXXXXXXX)
+  docker cp "$(docker create --rm $dfileiid):/src" "$dfilesrc/src"
+
   for release in $DOCKERFILE_RELEASES; do
-    buildtags=$(cat ./frontend/dockerfile/release/$release/tags)
-    tarout=$(mktemp -t dockerfile-frontend.XXXXXXXXXX)
+    buildtags=$(cat "$dfilesrc/src/release/$release/tags")
 
-    buildxCmd build $cacheFromFlags \
-      --build-arg "BUILDTAGS=$buildtags" \
-      --file "./frontend/dockerfile/cmd/dockerfile-frontend/Dockerfile" \
-      --output "type=oci,dest=$tarout" \
-      $currentcontext
+    dfiletarout=$(mktemp -t dfiletarout.XXXXXXXXXX)
+    buildxCmd build --build-arg "CHANNEL=$release" --output "type=oci,dest=$dfiletarout" "$DFILE_REF"
 
-    if [ -s $tarout ]; then
+    if [ -s "$dfiletarout" ]; then
       if [ "$release" = "mainline" ] || [ "$release" = "labs" ] || [ -n "$DOCKERFILE_RELEASES_CUSTOM" ] || [ "$GITHUB_ACTIONS" = "true" ]; then
-        cid=$(docker create -v /tmp $coverageVol --rm --privileged --volumes-from=$cacheVolume -e TEST_DOCKERD -e BUILDKIT_REGISTRY_MIRROR_DIR=/root/.cache/registry -e BUILDKIT_WORKER_RANDOM -e FRONTEND_GATEWAY_ONLY=local:/$release.tar -e EXTERNAL_DF_FRONTEND=/dockerfile-frontend $iid go test $coverageFlags --count=1 -tags "$buildtags" ${TESTFLAGS:--v} ./frontend/dockerfile)
-        docker cp $tarout $cid:/$release.tar
+        cid=$(docker create --workdir /dockerfile/src -v /tmp $coverageVol --rm --privileged --volumes-from=$cacheVolume -e TEST_DOCKERD -e BUILDKIT_REGISTRY_MIRROR_DIR=/root/.cache/registry -e BUILDKIT_WORKER_RANDOM -e FRONTEND_GATEWAY_ONLY=local:/$release.tar -e EXTERNAL_DF_FRONTEND=/dockerfile-frontend $iid go test $coverageFlags --count=1 -tags "$buildtags" ${TESTFLAGS:--v} .)
+        docker cp "$dfilesrc/src" "$cid:/dockerfile"
+        docker cp "$dfiletarout" "$cid:/$release.tar"
         if [ "$TEST_DOCKERD" = "1" ]; then
           docker cp "$TEST_DOCKERD_BINARY" $cid:/usr/bin/
         fi
         docker start -a $cid
       fi
     fi
-    rm $tarout
+    rm $dfiletarout
   done
+
+  rm -rf $dfilesrc
 fi
 
 if [ "$TEST_KEEP_CACHE" != "1" ]; then

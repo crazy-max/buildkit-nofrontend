@@ -5,10 +5,6 @@ run:
 
   modules-download-mode: vendor
 
-  build-tags:
-    - dfrunsecurity
-    - dfheredoc
-
 linters:
   enable:
     - deadcode
