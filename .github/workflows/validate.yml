@@ -7,7 +7,6 @@ on:
       - 'master'
     tags:
       - 'v*'
-      - 'dockerfile/*'
   pull_request:
     branches:
       - 'master'

@@ -71,15 +71,13 @@ make images
 Running tests:
 
 ```bash
-./hack/test integration gateway dockerfile
+./hack/test integration gateway
 ```
 
-This runs all unit and integration tests, gateway client and dockerfile tests in a containerized environment.
+This runs all unit and integration tests, gateway client tests in a containerized environment.
 Locally, every package can be tested separately with standard Go tools, but
 integration tests are skipped if local user doesn't have enough permissions or
-worker binaries are not installed. The dockerfile tests run by first building new Dockerfile frontend
-image and then loading it to the test environment. Builtin Dockerfile frontend can be tested with regular
-integration tests.
+worker binaries are not installed.
 
 ```bash
 # test a specific package only
@@ -91,9 +89,6 @@ TESTPKGS=./client TESTFLAGS="--run /TestCallDiskUsage -v" ./hack/test integratio
 # run all integration tests with a specific worker
 # supported workers: oci, oci-rootless, containerd, containerd-1.1
 TESTPKGS=./client TESTFLAGS="--run //worker=containerd -v" ./hack/test integration
-
-# run a specific dockerfile test only on labs channel
-DOCKERFILE_RELEASES=labs TESTFLAGS="--run /TestRunGlobalNetwork/worker=oci$/ -v" ./hack/test dockerfile
 ```
 
 Set `TEST_KEEP_CACHE=1` for the test framework to keep external dependant images in a docker volume

@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 export BUILDX_NO_DEFAULT_LOAD=true
 
 : ${PREFER_BUILDCTL=}
@@ -7,6 +7,7 @@ export BUILDX_NO_DEFAULT_LOAD=true
 : ${GITHUB_ACTIONS=}
 : ${CACHE_FROM=}
 : ${CACHE_TO=}
+: ${DFILE_REF=}
 
 if [ "$PREFER_BUILDCTL" = "1" ]; then
   echo >&2 "WARNING: PREFER_BUILDCTL is no longer supported. Ignoring."
@@ -60,4 +61,25 @@ if [ "$GITHUB_ACTIONS" = "true" ]; then
 fi
 if [ -n "$currentref" ]; then
   currentcontext="--build-arg BUILDKIT_CONTEXT_KEEP_GIT_DIR=1 $currentref"
+fi
+
+if [ -z "$DFILE_REF" ]; then
+  dfileRepo=docker/dockerfile
+  dfileReplace=$(go list -mod=mod -u -m -f '{{.Replace.Path}}' "github.com/${dfileRepo}" 2>/dev/null)
+  if [ -n "$dfileReplace" ]; then
+    # replace found, get dockerfile version from it instead
+    dfileVersion=$(go list -mod=mod -u -m -f '{{.Replace.Version}}' "github.com/${dfileRepo}")
+    # also set the right repo from replace
+    dfileRepo=${dfileReplace#github.com/}
+  else
+    # get dockerfile version from go.mod
+    dfileVersion=$(go list -mod=mod -u -m -f '{{.Version}}' "github.com/${dfileRepo}")
+  fi
+  if [[ "${dfileVersion}" == *-*-* ]]; then
+    # if pseudo-version, figure out just the uncommon sha (https://github.com/golang/go/issues/34745)
+    dfileVersion=$(echo "${dfileVersion}" | awk -F"-" '{print $NF}' | awk 'BEGIN{FIELDWIDTHS="7"} {print $1}')
+    # use github api to return full sha to be able to use it as ref for git remote context
+    dfileVersion=$(curl -s "https://api.github.com/repos/${dfileRepo}/commits/${dfileVersion}" | jq -r .sha)
+  fi
+  DFILE_REF="https://github.com/${dfileRepo}.git#${dfileVersion}"
 fi
